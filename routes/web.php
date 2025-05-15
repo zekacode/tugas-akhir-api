@@ -4,6 +4,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\FoodsController;
 
 // Route web standar Anda (jika ada)
 Route::get('/', function () {
@@ -39,5 +40,15 @@ Route::prefix('api')->group(function () { // Semua route API akan memiliki prefi
         Route::post('categories', [CategoryController::class, 'store']);
         Route::put('categories/{category}', [CategoryController::class, 'update']); // Bisa juga Route::patch
         Route::delete('categories/{category}', [CategoryController::class, 'destroy']);
+    });
+
+    // Food Routes
+    Route::get('foods', [FoodsController::class, 'index']);
+    Route::get('foods/{food}', [FoodsController::class, 'show'])->name('foods.show');
+
+    Route::middleware('auth:api')->group(function () {
+        Route::post('foods', [FoodsController::class, 'store']);
+        Route::put('foods/{food}', [FoodsController::class, 'update'])->name('foods.update');
+        Route::delete('foods/{food}', [FoodsController::class, 'destroy'])->name('foods.destroy');
     });
 });
