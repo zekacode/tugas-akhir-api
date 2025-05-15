@@ -2,7 +2,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\AuthController; // Pastikan import ini ada
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CategoryController;
 
 // Route web standar Anda (jika ada)
 Route::get('/', function () {
@@ -26,5 +27,17 @@ Route::prefix('api')->group(function () { // Semua route API akan memiliki prefi
             Route::post('refresh', [AuthController::class, 'refresh']);
             Route::get('me', [AuthController::class, 'me']);
         });
+    });
+
+    // Category Routes
+    // Endpoint publik untuk melihat kategori
+    Route::get('categories', [CategoryController::class, 'index']);
+    Route::get('categories/{category}', [CategoryController::class, 'show']);
+
+    // Endpoint terproteksi JWT untuk mengelola kategori
+    Route::middleware('auth:api')->group(function () {
+        Route::post('categories', [CategoryController::class, 'store']);
+        Route::put('categories/{category}', [CategoryController::class, 'update']); // Bisa juga Route::patch
+        Route::delete('categories/{category}', [CategoryController::class, 'destroy']);
     });
 });
