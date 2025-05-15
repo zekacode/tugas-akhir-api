@@ -43,6 +43,7 @@ Route::prefix('api')->group(function () { // Semua route API akan memiliki prefi
     });
 
     // Food Routes
+    Route::get('foods/oracle-pick', [FoodsController::class, 'oraclePick'])->name('foods.oraclePick');
     Route::get('foods', [FoodsController::class, 'index']);
     Route::get('foods/{food}', [FoodsController::class, 'show'])->name('foods.show');
 

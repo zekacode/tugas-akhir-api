@@ -95,4 +95,38 @@ class FoodsController extends Controller
         $food->delete();
         return response()->json(null, 204);
     }
+
+    /**
+     * Provide a random food suggestion.
+     * Optionally filter by category_id.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function oraclePick(Request $request)
+    {
+        $query = Foods::with('category'); // Eager load category
+
+        // Opsional: Filter berdasarkan category_id jika disediakan di query parameter
+        if ($request->has('category_id') && !empty($request->category_id)) {
+            $validator = Validator::make($request->all(), [
+                'category_id' => ['integer', Rule::exists('categories', 'id')],
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(['errors' => $validator->errors()], 422);
+            }
+            $query->where('category_id', $request->category_id);
+        }
+
+        // Ambil satu makanan secara acak
+        $randomFood = $query->inRandomOrder()->first();
+
+        if (!$randomFood) {
+            // Jika tidak ada makanan yang cocok (misal filter kategori tidak menghasilkan apa-apa)
+            return response()->json(['message' => 'No food found for your criteria.'], 404);
+        }
+
+        return new FoodsResource($randomFood);
+    }
 }
