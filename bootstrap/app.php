@@ -12,6 +12,15 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         //
+        $middleware->group('api', [
+            // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class, // Jika menggunakan Sanctum statefully
+            'throttle:api', // Contoh: throttle:60,1 (sesuaikan di Kernel jika perlu)
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        ]);
+
+        $middleware->validateCsrfTokens(except: [
+            'api/*', // Ini akan mengecualikan /api/auth/register, /api/auth/login, dll.
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
