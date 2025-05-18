@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\FoodsController;
+use App\Http\Controllers\Api\MoodController;
 
 // routes/web.php
 Route::get('/', function () {
@@ -15,6 +16,9 @@ Route::get('/', function () {
 // ==            DEFINISI ROUTE API DI SINI        ==
 // ==================================================
 Route::prefix('api')->group(function () { // Semua route API akan memiliki prefix /api
+
+    // Mood Routes
+    Route::get('moods', [MoodController::class, 'index']);
 
     // Auth Routes (Publik untuk API, tidak perlu CSRF, tidak perlu session state)
     Route::prefix('auth')->group(function () {

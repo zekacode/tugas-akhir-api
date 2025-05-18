@@ -15,7 +15,8 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             CategorySeeder::class,
-            FoodsSeeder::class,
+            // FoodsSeeder::class,
+            MoodSeeder::class,
             // Panggil seeder lain di sini jika ada
         ]);
     }

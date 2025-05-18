@@ -16,6 +16,8 @@ class FoodsSeeder extends Seeder
         $sarapanCategory = Category::where('name', 'Sarapan')->first();
         $makanSiangCategory = Category::where('name', 'Makan Siang')->first();
         $makanMalamCategory = Category::where('name', 'Makan Malam')->first();
+        $moodSenang = Mood::where('name', 'Senang')->first();
+    $moodEnergi = Mood::where('name', 'Butuh Energi')->first();
 
         if ($sarapanCategory) {
             Foods::create([
@@ -55,4 +57,6 @@ class FoodsSeeder extends Seeder
         }
         // Tambahkan data makanan lainnya sesuai kebutuhan
     }
+
+
 }

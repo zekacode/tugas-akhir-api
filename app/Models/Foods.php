@@ -30,4 +30,12 @@ class Foods extends Model
     {
         return $this->belongsTo(Category::class);
     }
+
+    /**
+     * The moods that belong to the food.
+     */
+    public function moods(): BelongsToMany
+    {
+        return $this->belongsToMany(Mood::class, 'food_mood', 'foods_id', 'mood_id');
+    }
 }

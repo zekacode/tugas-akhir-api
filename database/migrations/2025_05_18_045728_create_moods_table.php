@@ -6,20 +6,17 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('moods', function (Blueprint $table) {
             $table->id();
+            $table->string('name')->unique(); // Nama mood, misal: Senang, Sedih, Lelah
+            $table->string('description')->nullable(); // Deskripsi singkat tentang mood (opsional)
+            $table->string('emoji_icon')->nullable(); // Opsional: emoji atau icon identifier
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('moods');
