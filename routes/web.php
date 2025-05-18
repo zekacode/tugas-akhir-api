@@ -1,4 +1,4 @@
-// routes/web.php
+
 <?php
 
 use Illuminate\Support\Facades\Route;
@@ -6,10 +6,10 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\FoodsController;
 
-// Route web standar Anda (jika ada)
+// routes/web.php
 Route::get('/', function () {
     return view('welcome');
-});
+})->name('home');
 
 // ==================================================
 // ==            DEFINISI ROUTE API DI SINI        ==
@@ -52,4 +52,9 @@ Route::prefix('api')->group(function () { // Semua route API akan memiliki prefi
         Route::put('foods/{food}', [FoodsController::class, 'update'])->name('foods.update');
         Route::delete('foods/{food}', [FoodsController::class, 'destroy'])->name('foods.destroy');
     });
+
+    // Route untuk halaman Oracle Pick
+    Route::get('/oracle-pick', function () {
+        return view('oracle-pick');
+    })->name('oracle.pick.view');
 });
