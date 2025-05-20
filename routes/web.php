@@ -67,4 +67,7 @@ Route::prefix('api')->group(function () { // Semua route API akan memiliki prefi
 
      // WeatherCondition Routes
     Route::get('weather-conditions', [WeatherConditionController::class, 'index']);
+
+    // DietaryRestriction Routes
+    Route::get('dietary-restrictions', [DietaryRestrictionController::class, 'index']);
 });

@@ -54,4 +54,12 @@ class Foods extends Model
     {
         return $this->belongsToMany(WeatherCondition::class, 'food_weather_condition', 'foods_id', 'weather_condition_id');
     }
+
+    /**
+     * The Dietary restrictions that belong to the food.
+     */
+    public function dietaryRestrictions(): BelongsToMany
+    {
+        return $this->belongsToMany(DietaryRestriction::class, 'dietary_restriction_food', 'foods_id', 'dietary_restriction_id');
+    }
 }

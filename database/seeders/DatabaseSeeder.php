@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             MoodSeeder::class,
             OccasionSeeder::class,
             WeatherConditionSeeder::class,
+            DietaryRestrictionSeeder::class,
             // Panggil seeder lain di sini jika ada
         ]);
     }
