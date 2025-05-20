@@ -64,4 +64,7 @@ Route::prefix('api')->group(function () { // Semua route API akan memiliki prefi
 
     // Occasion Routes
     Route::get('occasions', [OccasionController::class, 'index']);
+
+     // WeatherCondition Routes
+    Route::get('weather-conditions', [WeatherConditionController::class, 'index']);
 });

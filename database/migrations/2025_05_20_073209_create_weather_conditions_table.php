@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('weather_conditions', function (Blueprint $table) {
             $table->id();
+            $table->string('name')->unique(); // Misal: Panas, Dingin, Sejuk
+            $table->string('description')->nullable();
             $table->timestamps();
         });
     }
