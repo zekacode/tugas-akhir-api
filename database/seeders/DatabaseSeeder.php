@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             // FoodsSeeder::class,
             MoodSeeder::class,
+            OccasionSeeder::class,
             // Panggil seeder lain di sini jika ada
         ]);
     }

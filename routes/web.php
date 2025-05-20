@@ -61,4 +61,7 @@ Route::prefix('api')->group(function () { // Semua route API akan memiliki prefi
     Route::get('/oracle-pick', function () {
         return view('oracle-pick');
     })->name('oracle.pick.view');
+
+    // Occasion Routes
+    Route::get('occasions', [OccasionController::class, 'index']);
 });
