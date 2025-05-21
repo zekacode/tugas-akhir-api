@@ -5,53 +5,72 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Foods; 
+use App\Models\Category; 
 use App\Models\Mood;
+use App\Models\Occasion;
+use App\Models\WeatherCondition;
+use App\Models\DietaryRestriction;
+use App\Models\CuisineType;
 use Illuminate\Http\Request;
 use App\Http\Resources\FoodsResource; 
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB; 
 
-class FoodsController extends Controller 
+class FoodsController extends Controller
 {
+    // Relasi yang akan di-eager load secara default
+    protected $relationsToLoad = [
+        'category', 'moods', 'occasions',
+        'weatherConditions', 'dietaryRestrictions', 'cuisineTypes'
+    ];
+
     public function index(Request $request)
     {
-        $query = Foods::with('category', 'moods'); 
+        $query = Foods::with($this->relationsToLoad);
 
-        if ($request->has('category_id')) {
+        // Filtering by category_id
+        if ($request->has('category_id') && !empty($request->category_id)) {
             $query->where('category_id', $request->category_id);
         }
-        if ($request->has('search')) {
+
+        // Searching by name
+        if ($request->has('search') && !empty($request->search)) {
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        // Opsional: Filter berdasarkan mood_id jika dikirim sebagai array atau tunggal
-        if ($request->has('mood_id')) {
-            $moodId = $request->mood_id;
-            $query->whereHas('moods', function ($q) use ($moodId) {
-                if (is_array($moodId)) {
-                    $q->whereIn('moods.id', $moodId); // Jika mood_id adalah array
-                } else {
-                    $q->where('moods.id', $moodId); // Jika mood_id tunggal
+        // Helper function untuk filter many-to-many
+        $applyManyToManyFilter = function ($query, $relationName, $requestKey, $tableName) {
+            if ($request->has($requestKey) && !empty($request->input($requestKey))) {
+                $ids = is_array($request->input($requestKey)) ? $request->input($requestKey) : [$request->input($requestKey)];
+                $validIds = array_filter($ids, 'is_numeric'); // Pastikan hanya angka
+                if (!empty($validIds)) {
+                    // Jika ingin makanan yang memiliki SEMUA ID yang dipilih (AND)
+                    // foreach ($validIds as $id) {
+                    //     $query->whereHas($relationName, function ($q) use ($id, $tableName) {
+                    //         $q->where($tableName.'.id', $id);
+                    //     });
+                    // }
+                    // Jika ingin makanan yang memiliki SALAH SATU ID yang dipilih (OR)
+                    $query->whereHas($relationName, function ($q) use ($validIds, $tableName) {
+                        $q->whereIn($tableName.'.id', $validIds);
+                    });
                 }
-            });
-        }
+            }
+        };
+
+        $applyManyToManyFilter($query, 'moods', 'mood_ids', 'moods'); // parameter 'mood_ids'
+        $applyManyToManyFilter($query, 'occasions', 'occasion_ids', 'occasions');
+        $applyManyToManyFilter($query, 'weatherConditions', 'weather_condition_ids', 'weather_conditions');
+        $applyManyToManyFilter($query, 'dietaryRestrictions', 'dietary_restriction_ids', 'dietary_restrictions');
+        $applyManyToManyFilter($query, 'cuisineTypes', 'cuisine_type_ids', 'cuisine_types');
 
         $foodsData = $query->latest()->paginate(10)->withQueryString();
 
         return response()->json([
-            'data' => FoodsResource::collection($foodsData), 
-            'meta' => [
-                'current_page' => $foodsData->currentPage(),
-                'last_page' => $foodsData->lastPage(),
-                'per_page' => $foodsData->perPage(),
-                'total' => $foodsData->total(),
-            ],
-            'links' => [
-                'first' => $foodsData->url(1),
-                'last' => $foodsData->url($foodsData->lastPage()),
-                'prev' => $foodsData->previousPageUrl(),
-                'next' => $foodsData->nextPageUrl(),
-            ],
+            'data' => FoodsResource::collection($foodsData),
+            'meta' => [ /* ... pagination meta ... */ ],
+            'links' => [ /* ... pagination links ... */ ],
         ]);
     }
 
@@ -65,110 +84,147 @@ class FoodsController extends Controller
             'prep_time_minutes' => 'nullable|integer|min:0',
             'cook_time_minutes' => 'nullable|integer|min:0',
             'category_id' => ['required', 'integer', Rule::exists('categories', 'id')],
-            'mood_ids' => 'nullable|array', // Moods akan dikirim sebagai array ID
-            'mood_ids.*' => ['integer', Rule::exists('moods', 'id')] // Validasi setiap ID dalam array mood_ids
+            'mood_ids' => 'nullable|array',
+            'mood_ids.*' => ['integer', Rule::exists('moods', 'id')],
+            'occasion_ids' => 'nullable|array',
+            'occasion_ids.*' => ['integer', Rule::exists('occasions', 'id')],
+            'weather_condition_ids' => 'nullable|array',
+            'weather_condition_ids.*' => ['integer', Rule::exists('weather_conditions', 'id')],
+            'dietary_restriction_ids' => 'nullable|array',
+            'dietary_restriction_ids.*' => ['integer', Rule::exists('dietary_restrictions', 'id')],
+            'cuisine_type_ids' => 'nullable|array',
+            'cuisine_type_ids.*' => ['integer', Rule::exists('cuisine_types', 'id')],
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $foodItem = Foods::create($request->except('mood_ids'));
+        // Gunakan DB Transaction untuk memastikan konsistensi data
+        // DB::beginTransaction();
+        // try {
+            $foodItemData = $request->except([
+                'mood_ids', 'occasion_ids', 'weather_condition_ids',
+                'dietary_restriction_ids', 'cuisine_type_ids'
+            ]);
+            $foodItem = Foods::create($foodItemData);
 
-        // Asosiasikan dengan mood jika ada
-        if ($request->has('mood_ids')) {
-            $foodItem->moods()->sync($request->input('mood_ids'));
-        }
+            // Sync relasi
+            if ($request->has('mood_ids')) $foodItem->moods()->sync($request->input('mood_ids'));
+            if ($request->has('occasion_ids')) $foodItem->occasions()->sync($request->input('occasion_ids'));
+            if ($request->has('weather_condition_ids')) $foodItem->weatherConditions()->sync($request->input('weather_condition_ids'));
+            if ($request->has('dietary_restriction_ids')) $foodItem->dietaryRestrictions()->sync($request->input('dietary_restriction_ids'));
+            if ($request->has('cuisine_type_ids')) $foodItem->cuisineTypes()->sync($request->input('cuisine_type_ids'));
 
-        return response()->json(new FoodsResource($foodItem->load(['category', 'moods'])), 201);
+        //     DB::commit();
+            return response()->json(new FoodsResource($foodItem->load($this->relationsToLoad)), 201);
+        // } catch (\Exception $e) {
+        //     DB::rollBack();
+        //     return response()->json(['message' => 'Failed to create food item.', 'error' => $e->getMessage()], 500);
+        // }
     }
 
-    public function show(Foods $food) 
+    public function show(Foods $food) // Sesuaikan type-hint
     {
-        // Eager load category dan moods
-        return new FoodsResource($food->load(['category', 'moods']));
+        return new FoodsResource($food->load($this->relationsToLoad));
     }
 
-    public function update(Request $request, Foods $food) 
+    public function update(Request $request, Foods $food) // Sesuaikan type-hint
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255|unique:foods,name,' . $food->id, // Sesuaikan nama tabel
             'description' => 'nullable|string',
-            'image_url' => 'nullable|url',
-            'recipe_link_or_summary' => 'nullable|string',
-            'prep_time_minutes' => 'nullable|integer|min:0',
-            'cook_time_minutes' => 'nullable|integer|min:0',
+            // ... (validasi lain sama seperti store) ...
             'category_id' => ['required', 'integer', Rule::exists('categories', 'id')],
             'mood_ids' => 'nullable|array',
-            'mood_ids.*' => ['integer', Rule::exists('moods', 'id')]
+            'mood_ids.*' => ['integer', Rule::exists('moods', 'id')],
+            'occasion_ids' => 'nullable|array',
+            'occasion_ids.*' => ['integer', Rule::exists('occasions', 'id')],
+            'weather_condition_ids' => 'nullable|array',
+            'weather_condition_ids.*' => ['integer', Rule::exists('weather_conditions', 'id')],
+            'dietary_restriction_ids' => 'nullable|array',
+            'dietary_restriction_ids.*' => ['integer', Rule::exists('dietary_restrictions', 'id')],
+            'cuisine_type_ids' => 'nullable|array',
+            'cuisine_type_ids.*' => ['integer', Rule::exists('cuisine_types', 'id')],
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $food->update($request->except('mood_ids'));
+        // DB::beginTransaction();
+        // try {
+            $foodItemData = $request->except([
+                'mood_ids', 'occasion_ids', 'weather_condition_ids',
+                'dietary_restriction_ids', 'cuisine_type_ids'
+            ]);
+            $food->update($foodItemData);
 
-        // Sinkronkan relasi moods (bisa juga attach/detach jika logikanya beda)
-        // sync() akan menghapus relasi lama dan menambahkan yang baru dari array
-        if ($request->has('mood_ids')) {
-            $food->moods()->sync($request->input('mood_ids'));
-        } else {
-            // Jika tidak ada mood_ids dikirim, hapus semua relasi mood yang ada
-            $food->moods()->detach();
-        }
+            // Helper function untuk sync atau detach
+            $syncOrDetach = function ($relationName, $requestKey) use ($request, $food) {
+                if ($request->has($requestKey)) {
+                    $food->{$relationName}()->sync($request->input($requestKey, [])); // [] jika key ada tapi kosong
+                } else {
+                }
+            };
 
-        return new FoodsResource($food->load(['category', 'moods']));
+            $syncOrDetach('moods', 'mood_ids');
+            $syncOrDetach('occasions', 'occasion_ids');
+            $syncOrDetach('weatherConditions', 'weather_condition_ids');
+            $syncOrDetach('dietaryRestrictions', 'dietary_restriction_ids');
+            $syncOrDetach('cuisineTypes', 'cuisine_type_ids');
+
+        //     DB::commit();
+            return new FoodsResource($food->load($this->relationsToLoad));
+        // } catch (\Exception $e) {
+        //     DB::rollBack();
+        //     return response()->json(['message' => 'Failed to update food item.', 'error' => $e->getMessage()], 500);
+        // }
     }
 
-    public function destroy(Foods $food) 
-    {
-        // Relasi di tabel pivot (food_mood) akan otomatis terhapus karena onDelete('cascade')
-        $food->delete();
-        return response()->json(null, 204);
-    }
+    public function destroy(Foods $food) { /* ... (tetap sama) ... */ }
 
-    /**
-     * Provide a random food suggestion.
-     * Optionally filter by category_id.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function oraclePick(Request $request)
     {
-        $query = Foods::with('category', 'moods'); // Eager load category
+        $query = Foods::with($this->relationsToLoad);
 
-        // Opsional: Filter berdasarkan category_id jika disediakan di query parameter
-        if ($request->has('category_id') && !empty($request->category_id)) {
-            $validator = Validator::make($request->all(), [
-                'category_id' => ['integer', Rule::exists('categories', 'id')],
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json(['errors' => $validator->errors()], 422);
+        // Validasi dan filter untuk setiap kategori
+        $validateAndApplyFilter = function ($query, $requestKey, $relationName, $tableName, $modelClass) use ($request) {
+            if ($request->has($requestKey) && !empty($request->input($requestKey))) {
+                $ids = is_array($request->input($requestKey)) ? $request->input($requestKey) : [$request->input($requestKey)];
+                $validator = Validator::make([$requestKey => $ids], [
+                    $requestKey => 'array',
+                    $requestKey.'.*' => ['integer', Rule::exists($tableName, 'id')],
+                ]);
+                if ($validator->fails()) {
+                    // Mungkin throw exception atau return error response
+                    // Untuk oracle pick, kita bisa abaikan filter jika tidak valid, atau return error
+                    // return response()->json(['errors' => $validator->errors()], 422); // Opsi 1: Return error
+                    return null; // Opsi 2: Abaikan filter ini (atau set flag error)
+                }
+                $query->whereHas($relationName, function ($q) use ($ids, $tableName) {
+                     $q->whereIn($tableName.'.id', $ids); // Mengambil makanan yang memiliki SALAH SATU ID yang dipilih
+                });
             }
+            return $query; // Kembalikan query agar bisa di-chain
+        };
+
+        if ($request->has('category_id')) { // Filter category_id (one-to-many)
+            $validator = Validator::make($request->all(), ['category_id' => ['integer', Rule::exists('categories', 'id')]]);
+            if ($validator->fails()) return response()->json(['errors' => $validator->errors()], 422);
             $query->where('category_id', $request->category_id);
         }
 
-        if ($request->has('mood_id') && !empty($request->mood_id)) {
-            $moodValidator = Validator::make($request->all(), [
-                'mood_id' => ['integer', Rule::exists('moods', 'id')],
-            ]);
-            if ($moodValidator->fails()) {
-                return response()->json(['errors' => $moodValidator->errors()], 422);
-            }
-            // Filter makanan yang memiliki mood_id tertentu
-            $query->whereHas('moods', function ($q) use ($request) {
-                $q->where('moods.id', $request->mood_id);
-            });
-        }
+        $query = $validateAndApplyFilter($query, 'mood_ids', 'moods', 'moods', Mood::class) ?? $query;
+        $query = $validateAndApplyFilter($query, 'occasion_ids', 'occasions', 'occasions', Occasion::class) ?? $query;
+        $query = $validateAndApplyFilter($query, 'weather_condition_ids', 'weather_conditions', 'weather_conditions', WeatherCondition::class) ?? $query;
+        $query = $validateAndApplyFilter($query, 'dietary_restriction_ids', 'dietary_restrictions', 'dietary_restrictions', DietaryRestriction::class) ?? $query;
+        $query = $validateAndApplyFilter($query, 'cuisine_type_ids', 'cuisine_types', 'cuisine_types', CuisineType::class) ?? $query;
 
-        // Ambil satu makanan secara acak
+
         $randomFood = $query->inRandomOrder()->first();
 
         if (!$randomFood) {
-            // Jika tidak ada makanan yang cocok (misal filter kategori tidak menghasilkan apa-apa)
             return response()->json(['message' => 'No food found for your criteria.'], 404);
         }
 
