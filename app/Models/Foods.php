@@ -62,4 +62,12 @@ class Foods extends Model
     {
         return $this->belongsToMany(DietaryRestriction::class, 'dietary_restriction_food', 'foods_id', 'dietary_restriction_id');
     }
+
+    /**
+     * The Cousine types that belong to the food.
+     */
+    public function cuisineTypes(): BelongsToMany
+    {
+        return $this->belongsToMany(CuisineType::class, 'cuisine_type_food', 'foods_id', 'cuisine_type_id');
+    }
 }

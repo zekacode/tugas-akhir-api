@@ -6,6 +6,10 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\FoodsController;
 use App\Http\Controllers\Api\MoodController;
+use App\Http\Controllers\Api\OccasionController;
+use App\Http\Controllers\Api\DietaryRestrictionController;
+use App\Http\Controllers\Api\WeatherConditionController;
+use App\Http\Controllers\Api\CuisineTypeController;
 
 // routes/web.php
 Route::get('/', function () {
@@ -70,4 +74,7 @@ Route::prefix('api')->group(function () { // Semua route API akan memiliki prefi
 
     // DietaryRestriction Routes
     Route::get('dietary-restrictions', [DietaryRestrictionController::class, 'index']);
+
+    // CuisineType Routes
+    Route::get('cuisine-types', [CuisineTypeController::class, 'index']);
 });
