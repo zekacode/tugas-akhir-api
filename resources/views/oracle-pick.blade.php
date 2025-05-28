@@ -59,7 +59,9 @@
                 <div id="suggestionResult" class="mt-4" style="display: none;">
                     <h4>The Oracle Suggests:</h4>
                     <div class="card">
-                        <img id="foodImage" src="" class="card-img-top" alt="Food Image" style="max-height: 300px; object-fit: cover; display:none;">
+                        {{-- Elemen Gambar Dihapus/Dikomentari --}}
+                        {{-- <img id="foodImage" src="" class="card-img-top" alt="Food Image" style="max-height: 300px; object-fit: cover; display:none;"> --}}
+                        
                         <div class="card-body">
                             <h5 class="card-title" id="foodName"></h5>
                             <p class="card-text" id="foodDescription"></p>
@@ -67,7 +69,9 @@
                             <div id="foodAdditionalCategories" class="mb-2">
                                 <!-- Detail kategori tambahan akan ditampilkan di sini -->
                             </div>
-                            <a id="foodRecipeLink" href="#" target="_blank" class="btn btn-info" style="display:none;">View Recipe/Summary</a>
+                            
+                            {{-- Tombol View Recipe/Summary Dihapus/Dikomentari --}}
+                            {{-- <a id="foodRecipeLink" href="#" target="_blank" class="btn btn-info" style="display:none;">View Recipe/Summary</a> --}}
                         </div>
                     </div>
                 </div>
@@ -92,10 +96,10 @@
         const suggestionResultDiv = document.getElementById('suggestionResult');
         const foodNameEl = document.getElementById('foodName');
         const foodDescriptionEl = document.getElementById('foodDescription');
-        const foodImageEl = document.getElementById('foodImage');
+        // const foodImageEl = document.getElementById('foodImage'); // Dihapus/Dikomentari
         const foodMainCategoryEl = document.getElementById('foodMainCategory');
         const foodAdditionalCategoriesEl = document.getElementById('foodAdditionalCategories');
-        const foodRecipeLinkEl = document.getElementById('foodRecipeLink');
+        // const foodRecipeLinkEl = document.getElementById('foodRecipeLink'); // Dihapus/Dikomentari
         const errorResultDiv = document.getElementById('errorResult');
         const loadingIndicator = document.getElementById('loadingIndicator');
 
@@ -117,9 +121,8 @@
                 });
                 if (!response.ok) throw new Error(`Failed to load ${endpoint}`);
                 
-                // Beberapa API mungkin mengembalikan data langsung, beberapa dalam 'data' (jika ada pagination)
                 let result = await response.json();
-                let items = Array.isArray(result) ? result : (result.data || []); // Sesuaikan jika struktur berbeda
+                let items = Array.isArray(result) ? result : (result.data || []); 
 
                 items.forEach(item => {
                     const option = document.createElement('option');
@@ -141,7 +144,7 @@
 
             const params = new URLSearchParams();
             if (categoryFilterSelect.value) params.append('category_id', categoryFilterSelect.value);
-            if (moodFilterSelect.value) params.append('mood_ids[]', moodFilterSelect.value); // Kirim sebagai array
+            if (moodFilterSelect.value) params.append('mood_ids[]', moodFilterSelect.value);
             if (occasionFilterSelect.value) params.append('occasion_ids[]', occasionFilterSelect.value);
             if (weatherFilterSelect.value) params.append('weather_condition_ids[]', weatherFilterSelect.value);
             if (dietaryFilterSelect.value) params.append('dietary_restriction_ids[]', dietaryFilterSelect.value);
@@ -168,13 +171,18 @@
                 foodDescriptionEl.textContent = food.description || 'No description available.';
                 foodMainCategoryEl.textContent = food.category ? `Main Category: ${food.category.name}` : 'Category: Not specified';
 
+                // Kode untuk gambar dihapus/dikomentari
+                /*
                 if (food.image_url) {
                     foodImageEl.src = food.image_url;
                     foodImageEl.style.display = 'block';
                 } else {
                     foodImageEl.style.display = 'none';
                 }
+                */
                 
+                // Kode untuk link resep dihapus/dikomentari
+                /*
                 if (food.recipe_link_or_summary) {
                     foodRecipeLinkEl.href = food.recipe_link_or_summary;
                     foodRecipeLinkEl.textContent = food.recipe_link_or_summary.startsWith('http') ? 'View Recipe' : 'View Summary';
@@ -182,6 +190,7 @@
                 } else {
                     foodRecipeLinkEl.style.display = 'none';
                 }
+                */
 
                 // Menampilkan kategori tambahan
                 foodAdditionalCategoriesEl.innerHTML = ''; // Bersihkan dulu

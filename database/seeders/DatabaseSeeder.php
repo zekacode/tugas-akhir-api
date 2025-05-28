@@ -15,11 +15,12 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             CategorySeeder::class,
-            // FoodsSeeder::class,
+            FoodsSeeder::class,
             MoodSeeder::class,
             OccasionSeeder::class,
             WeatherConditionSeeder::class,
             DietaryRestrictionSeeder::class,
+            CuisineTypeSeeder::class,
             // Panggil seeder lain di sini jika ada
         ]);
     }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\DietaryRestriction;
 use Illuminate\Http\Request;
+use App\Http\Resources\DietaryRestrictionResource;
 
 class DietaryRestrictionController extends Controller
 {

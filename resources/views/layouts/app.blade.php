@@ -23,7 +23,7 @@
         <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
             <div class="container">
                 <a class="navbar-brand" href="{{ url('/') }}">
-                    {{ config('app.name', 'Culinary Oracle') }}
+                    Dapur Gaib
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="{{ __('Toggle navigation') }}">
                     <span class="navbar-toggler-icon"></span>
@@ -33,7 +33,7 @@
                     <!-- Left Side Of Navbar -->
                     <ul class="navbar-nav me-auto">
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('oracle.pick.view') }}">{{ __('Oracle Pick') }}</a>
+                            <a class="nav-link" href="{{ route('oracle.pick.view') }}">Masuk Dapur Gaib</a>
                         </li>
                         <!-- Tambahkan link lain di sini jika perlu -->
                     </ul>
@@ -60,13 +60,13 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="loginModalLabel">Login to API</h5>
+                    <h5 class="modal-title" id="loginModalLabel">Login ke API</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form id="loginForm">
                         <div class="mb-3">
-                            <label for="loginEmail" class="form-label">Email address</label>
+                            <label for="loginEmail" class="form-label">Email</label>
                             <input type="email" class="form-control" id="loginEmail" required>
                         </div>
                         <div class="mb-3">
