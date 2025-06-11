@@ -44,7 +44,6 @@
         color: #007bff; /* Warna ikon biru */
         margin-bottom: 1rem;
     }
-    /* Anda bisa menambahkan lebih banyak style di sini atau di file CSS terpisah */
 </style>
 @endpush
 
