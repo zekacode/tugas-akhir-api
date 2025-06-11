@@ -5,26 +5,23 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+// Hapus use Illuminate\Support\Facades\Auth; jika tidak digunakan lagi secara langsung
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use App\Models\User;
-use Tymon\JWTAuth\Facades\JWTAuth; // Import JWTAuth facade
+use Tymon\JWTAuth\Facades\JWTAuth;
+use Tymon\JWTAuth\Exceptions\JWTException; // Import exception
+use Tymon\JWTAuth\Exceptions\TokenExpiredException;
+use Tymon\JWTAuth\Exceptions\TokenInvalidException;
+
 
 class AuthController extends Controller
 {
-    public function __construct()
-    {
-        // Middleware 'auth:api' akan diterapkan ke semua method kecuali 'login' dan 'register'
-        // $this->middleware('auth:api', ['except' => ['login', 'register']]);
-    }
+    // Constructor bisa dikosongkan atau dihapus karena middleware diatur di route
+    // public function __construct()
+    // {
+    // }
 
-    /**
-     * Handle a login request to the application.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -33,101 +30,112 @@ class AuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json($validator->errors(), 422); // Unprocessable Entity
+            return response()->json(['errors' => $validator->errors()], 422);
         }
 
         $credentials = $request->only('email', 'password');
 
-        if (! $token = JWTAuth::attempt($credentials)) {
-            return response()->json(['error' => 'Unauthorized: Invalid credentials'], 401);
+        try {
+            if (! $token = JWTAuth::attempt($credentials)) {
+                return response()->json(['error' => 'Unauthorized: Invalid credentials'], 401);
+            }
+        } catch (JWTException $e) {
+            return response()->json(['error' => 'Could not create token'], 500);
         }
 
         return $this->respondWithToken($token);
     }
 
-    /**
-     * Handle a registration request for the application.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */ 
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6|confirmed', // 'confirmed' akan mencari field 'password_confirmation'
+            'password' => 'required|string|min:6|confirmed',
         ]);
 
         if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+            return response()->json(['errors' => $validator->errors()], 422);
         }
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make($request->password), // Hash password sebelum disimpan
+            'password' => Hash::make($request->password),
         ]);
 
-        // Otomatis login setelah registrasi dan dapatkan token
         $token = JWTAuth::fromUser($user);
 
         return response()->json([
             'message' => 'User successfully registered',
-            'user' => $user, // Anda bisa memilih untuk tidak mengembalikan data user di sini
-            'token_type' => 'bearer',
+            'user' => $user,
             'access_token' => $token,
-            'expires_in' => JWTAuth::factory()->getTTL() * 60 // TTL dalam detik
-        ], 201); // Created
+            'token_type' => 'bearer',
+            'expires_in' => JWTAuth::factory()->getTTL() * 60
+        ], 201);
     }
 
-    /**
-     * Get the authenticated User.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function me()
+    public function me() // Tidak perlu Request $request jika route sudah diproteksi middleware auth:api
     {
-        // Method ini akan diproteksi oleh middleware 'auth:api'
-        return response()->json(auth()->user());
+        try {
+            // Middleware 'auth:api' seharusnya sudah memastikan token valid dan user ada
+            // Jadi, auth('api')->user() juga bisa dipertimbangkan di sini.
+            // Namun, parseToken()->authenticate() lebih eksplisit untuk JWT.
+            if (! $user = JWTAuth::parseToken()->authenticate()) {
+                return response()->json(['message' => 'User not found'], 404);
+            }
+        } catch (TokenExpiredException $e) {
+            return response()->json(['message' => 'Token has expired'], 401);
+        } catch (TokenInvalidException $e) {
+            return response()->json(['message' => 'Token is invalid'], 401);
+        } catch (JWTException $e) {
+            // Ini terjadi jika token tidak ada atau ada masalah saat parsing,
+            // tapi middleware auth:api seharusnya sudah menangani token absent.
+            return response()->json(['message' => 'Token is absent or unprocessable'], 401);
+        }
+
+        return response()->json($user);
     }
 
-    /**
-     * Log the user out (Invalidate the token).
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function logout()
+    public function logout() // Tidak perlu Request $request jika token diambil dari parseToken()
     {
-        auth()->logout(); // Ini akan menginvalidasi token saat ini
-
-        return response()->json(['message' => 'Successfully logged out']);
+        try {
+            JWTAuth::parseToken()->invalidate(true); // Invalidate the token and add to blacklist
+            return response()->json(['message' => 'Successfully logged out']);
+        } catch (TokenExpiredException $e) {
+            // Jika token sudah expired, anggap saja sudah logout
+            return response()->json(['message' => 'Token already expired, considered logged out.'], 200);
+        } catch (TokenInvalidException $e) {
+            return response()->json(['message' => 'Token is invalid.'], 401);
+        } catch (JWTException $e) {
+            // Token tidak ada atau tidak bisa di-parse, anggap sudah logout atau error
+            return response()->json(['message' => 'Token is absent or unprocessable, cannot logout.'], 401);
+        }
     }
 
-    /**
-     * Refresh a token.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function refresh()
     {
-        return $this->respondWithToken(JWTAuth::refresh(JWTAuth::getToken()));
+        try {
+            $newToken = JWTAuth::parseToken()->refresh();
+            return $this->respondWithToken($newToken);
+        } catch (TokenExpiredException $e) {
+            // Jika token refresh juga sudah expired atau token lama tidak bisa di-refresh
+            return response()->json(['message' => 'Token cannot be refreshed, it may have expired blacklist window'], 401);
+        } catch (TokenInvalidException $e) {
+            return response()->json(['message' => 'Token is invalid, cannot refresh.'], 401);
+        } catch (JWTException $e) {
+            return response()->json(['message' => 'Token is absent or unprocessable, cannot refresh.'], 401);
+        }
     }
 
-    /**
-     * Get the token array structure.
-     *
-     * @param  string $token
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
     protected function respondWithToken($token)
     {
         return response()->json([
             'access_token' => $token,
             'token_type' => 'bearer',
-            'expires_in' => JWTAuth::factory()->getTTL() * 60, // TTL dalam detik
-            // 'user' => auth()->user() // Opsional: kembalikan data user juga saat login
+            'expires_in' => JWTAuth::factory()->getTTL() * 60,
+            // Opsional: Kembalikan juga data user saat login jika diinginkan
+            // 'user' => auth('api')->user() // Pastikan ini dipanggil setelah token berhasil dibuat/di-attempt
         ]);
     }
 }

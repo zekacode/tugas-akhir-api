@@ -1,4 +1,3 @@
-
 <?php
 
 use Illuminate\Support\Facades\Route;
@@ -11,26 +10,43 @@ use App\Http\Controllers\Api\DietaryRestrictionController;
 use App\Http\Controllers\Api\WeatherConditionController;
 use App\Http\Controllers\Api\CuisineTypeController;
 
-// routes/web.php
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+|
+*/
+
+// === WEB ROUTES (UNTUK HALAMAN HTML / FRONTEND) ===
 Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
-// ==================================================
-// ==            DEFINISI ROUTE API DI SINI        ==
-// ==================================================
-Route::prefix('api')->group(function () { // Semua route API akan memiliki prefix /api
+// Route untuk halaman Dokumentasi API
+Route::get('/api-documentation', function () {
+    return view('api-documentation');
+})->name('api.documentation');
 
+// Route untuk halaman Oracle Pick (Frontend)
+Route::get('/oracle-pick', function () {
+    return view('oracle-pick');
+})->name('oracle.pick.view'); // <-- DIPINDAHKAN KE LUAR GRUP API
+
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+*/
+
+Route::prefix('api')->group(function () {
     // Mood Routes
     Route::get('moods', [MoodController::class, 'index']);
 
-    // Auth Routes (Publik untuk API, tidak perlu CSRF, tidak perlu session state)
+    // Auth Routes
     Route::prefix('auth')->group(function () {
         Route::post('register', [AuthController::class, 'register']);
         Route::post('login', [AuthController::class, 'login']);
-
-        // Routes di bawah ini memerlukan token JWT yang valid
-        // Middleware 'auth:api' akan memastikan ini
         Route::middleware('auth:api')->group(function () {
             Route::post('logout', [AuthController::class, 'logout']);
             Route::post('refresh', [AuthController::class, 'refresh']);
@@ -39,32 +55,23 @@ Route::prefix('api')->group(function () { // Semua route API akan memiliki prefi
     });
 
     // Category Routes
-    // Endpoint publik untuk melihat kategori
     Route::get('categories', [CategoryController::class, 'index']);
     Route::get('categories/{category}', [CategoryController::class, 'show']);
-
-    // Endpoint terproteksi JWT untuk mengelola kategori
     Route::middleware('auth:api')->group(function () {
         Route::post('categories', [CategoryController::class, 'store']);
-        Route::put('categories/{category}', [CategoryController::class, 'update']); // Bisa juga Route::patch
+        Route::put('categories/{category}', [CategoryController::class, 'update']);
         Route::delete('categories/{category}', [CategoryController::class, 'destroy']);
     });
 
     // Food Routes
-    Route::get('foods/oracle-pick', [FoodsController::class, 'oraclePick'])->name('foods.oraclePick');
+    Route::get('foods/oracle-pick', [FoodsController::class, 'oraclePick'])->name('foods.oraclePick'); // Ini adalah endpoint API, jadi tetap di sini
     Route::get('foods', [FoodsController::class, 'index']);
     Route::get('foods/{food}', [FoodsController::class, 'show'])->name('foods.show');
-
     Route::middleware('auth:api')->group(function () {
         Route::post('foods', [FoodsController::class, 'store']);
         Route::put('foods/{food}', [FoodsController::class, 'update'])->name('foods.update');
         Route::delete('foods/{food}', [FoodsController::class, 'destroy'])->name('foods.destroy');
     });
-
-    // Route untuk halaman Oracle Pick
-    Route::get('/oracle-pick', function () {
-        return view('oracle-pick');
-    })->name('oracle.pick.view');
 
     // Occasion Routes
     Route::get('occasions', [OccasionController::class, 'index']);
