@@ -53,16 +53,18 @@ Route::prefix('api')->group(function () {
     });
 
     // Category Routes (Kategori Utama Makanan)
-    Route::apiResource('categories', CategoryController::class)
-        ->middleware('auth:api', ['except' => ['index', 'show']]);
+    Route::get('categories', [CategoryController::class, 'index']);
+    Route::get('categories/{category}', [CategoryController::class, 'show']);
+    Route::middleware('auth:api')->group(function () {
+        Route::post('categories', [CategoryController::class, 'store']);
+        Route::put('categories/{category}', [CategoryController::class, 'update']);
+        Route::delete('categories/{category}', [CategoryController::class, 'destroy']);
+    });
 
     // Food Routes
     Route::get('foods/oracle-pick', [FoodsController::class, 'oraclePick'])->name('foods.oraclePick');
-    
-
-    // Definisi manual untuk FoodsController (seperti yang sudah ada, ini sudah baik)
     Route::get('foods', [FoodsController::class, 'index']);
-    Route::get('foods/{food}', [FoodsController::class, 'show'])->name('foods.show'); // Menambahkan name agar konsisten
+    Route::get('foods/{food}', [FoodsController::class, 'show'])->name('foods.show');
     Route::middleware('auth:api')->group(function () {
         Route::post('foods', [FoodsController::class, 'store']);
         Route::put('foods/{food}', [FoodsController::class, 'update'])->name('foods.update');
@@ -70,26 +72,51 @@ Route::prefix('api')->group(function () {
     });
 
 
-    // === KATEGORI PENDUKUNG MENGGUNAKAN apiResource ===
+    // === KATEGORI PENDUKUNG DENGAN ROUTE MANUAL ===
 
     // Mood Routes
-    Route::apiResource('moods', MoodController::class)
-        ->middleware('auth:api', ['except' => ['index', 'show']]);
+    Route::get('moods', [MoodController::class, 'index']);
+    Route::get('moods/{mood}', [MoodController::class, 'show']); // Asumsi method show ada di MoodController
+    Route::middleware('auth:api')->group(function () {
+        Route::post('moods', [MoodController::class, 'store']);
+        Route::put('moods/{mood}', [MoodController::class, 'update']);
+        Route::delete('moods/{mood}', [MoodController::class, 'destroy']);
+    });
 
     // Occasion Routes
-    Route::apiResource('occasions', OccasionController::class)
-        ->middleware('auth:api', ['except' => ['index', 'show']]);
+    Route::get('occasions', [OccasionController::class, 'index']);
+    Route::get('occasions/{occasion}', [OccasionController::class, 'show']);
+    Route::middleware('auth:api')->group(function () {
+        Route::post('occasions', [OccasionController::class, 'store']);
+        Route::put('occasions/{occasion}', [OccasionController::class, 'update']);
+        Route::delete('occasions/{occasion}', [OccasionController::class, 'destroy']);
+    });
 
     // WeatherCondition Routes
-    Route::apiResource('weather-conditions', WeatherConditionController::class)
-        ->middleware('auth:api', ['except' => ['index', 'show']]);
+    Route::get('weather-conditions', [WeatherConditionController::class, 'index']);
+    Route::get('weather-conditions/{weatherCondition}', [WeatherConditionController::class, 'show']);
+    Route::middleware('auth:api')->group(function () {
+        Route::post('weather-conditions', [WeatherConditionController::class, 'store']);
+        Route::put('weather-conditions/{weatherCondition}', [WeatherConditionController::class, 'update']);
+        Route::delete('weather-conditions/{weatherCondition}', [WeatherConditionController::class, 'destroy']);
+    });
 
     // DietaryRestriction Routes
-    Route::apiResource('dietary-restrictions', DietaryRestrictionController::class)
-        ->middleware('auth:api', ['except' => ['index', 'show']]);
+    Route::get('dietary-restrictions', [DietaryRestrictionController::class, 'index']);
+    Route::get('dietary-restrictions/{dietaryRestriction}', [DietaryRestrictionController::class, 'show']);
+    Route::middleware('auth:api')->group(function () {
+        Route::post('dietary-restrictions', [DietaryRestrictionController::class, 'store']);
+        Route::put('dietary-restrictions/{dietaryRestriction}', [DietaryRestrictionController::class, 'update']);
+        Route::delete('dietary-restrictions/{dietaryRestriction}', [DietaryRestrictionController::class, 'destroy']);
+    });
 
     // CuisineType Routes
-    Route::apiResource('cuisine-types', CuisineTypeController::class)
-        ->middleware('auth:api', ['except' => ['index', 'show']]);
+    Route::get('cuisine-types', [CuisineTypeController::class, 'index']);
+    Route::get('cuisine-types/{cuisineType}', [CuisineTypeController::class, 'show']);
+    Route::middleware('auth:api')->group(function () {
+        Route::post('cuisine-types', [CuisineTypeController::class, 'store']);
+        Route::put('cuisine-types/{cuisineType}', [CuisineTypeController::class, 'update']);
+        Route::delete('cuisine-types/{cuisineType}', [CuisineTypeController::class, 'destroy']);
+    });
 
 });
