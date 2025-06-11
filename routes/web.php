@@ -30,7 +30,7 @@ Route::get('/api-documentation', function () {
 // Route untuk halaman Oracle Pick (Frontend)
 Route::get('/oracle-pick', function () {
     return view('oracle-pick');
-})->name('oracle.pick.view'); // <-- DIPINDAHKAN KE LUAR GRUP API
+})->name('oracle.pick.view');
 
 /*
 |--------------------------------------------------------------------------
@@ -40,8 +40,6 @@ Route::get('/oracle-pick', function () {
 */
 
 Route::prefix('api')->group(function () {
-    // Mood Routes
-    Route::get('moods', [MoodController::class, 'index']);
 
     // Auth Routes
     Route::prefix('auth')->group(function () {
@@ -54,34 +52,44 @@ Route::prefix('api')->group(function () {
         });
     });
 
-    // Category Routes
-    Route::get('categories', [CategoryController::class, 'index']);
-    Route::get('categories/{category}', [CategoryController::class, 'show']);
-    Route::middleware('auth:api')->group(function () {
-        Route::post('categories', [CategoryController::class, 'store']);
-        Route::put('categories/{category}', [CategoryController::class, 'update']);
-        Route::delete('categories/{category}', [CategoryController::class, 'destroy']);
-    });
+    // Category Routes (Kategori Utama Makanan)
+    Route::apiResource('categories', CategoryController::class)
+        ->middleware('auth:api', ['except' => ['index', 'show']]);
 
     // Food Routes
-    Route::get('foods/oracle-pick', [FoodsController::class, 'oraclePick'])->name('foods.oraclePick'); // Ini adalah endpoint API, jadi tetap di sini
+    Route::get('foods/oracle-pick', [FoodsController::class, 'oraclePick'])->name('foods.oraclePick');
+    
+
+    // Definisi manual untuk FoodsController (seperti yang sudah ada, ini sudah baik)
     Route::get('foods', [FoodsController::class, 'index']);
-    Route::get('foods/{food}', [FoodsController::class, 'show'])->name('foods.show');
+    Route::get('foods/{food}', [FoodsController::class, 'show'])->name('foods.show'); // Menambahkan name agar konsisten
     Route::middleware('auth:api')->group(function () {
         Route::post('foods', [FoodsController::class, 'store']);
         Route::put('foods/{food}', [FoodsController::class, 'update'])->name('foods.update');
         Route::delete('foods/{food}', [FoodsController::class, 'destroy'])->name('foods.destroy');
     });
 
-    // Occasion Routes
-    Route::get('occasions', [OccasionController::class, 'index']);
 
-     // WeatherCondition Routes
-    Route::get('weather-conditions', [WeatherConditionController::class, 'index']);
+    // === KATEGORI PENDUKUNG MENGGUNAKAN apiResource ===
+
+    // Mood Routes
+    Route::apiResource('moods', MoodController::class)
+        ->middleware('auth:api', ['except' => ['index', 'show']]);
+
+    // Occasion Routes
+    Route::apiResource('occasions', OccasionController::class)
+        ->middleware('auth:api', ['except' => ['index', 'show']]);
+
+    // WeatherCondition Routes
+    Route::apiResource('weather-conditions', WeatherConditionController::class)
+        ->middleware('auth:api', ['except' => ['index', 'show']]);
 
     // DietaryRestriction Routes
-    Route::get('dietary-restrictions', [DietaryRestrictionController::class, 'index']);
+    Route::apiResource('dietary-restrictions', DietaryRestrictionController::class)
+        ->middleware('auth:api', ['except' => ['index', 'show']]);
 
     // CuisineType Routes
-    Route::get('cuisine-types', [CuisineTypeController::class, 'index']);
+    Route::apiResource('cuisine-types', CuisineTypeController::class)
+        ->middleware('auth:api', ['except' => ['index', 'show']]);
+
 });
